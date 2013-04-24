@@ -72,7 +72,7 @@ var save = function(data,callback){
 var redis = require('redis-node');
 var redisClient = redis.createClient();
 var async = require('async');
-//var $ = require('jquery');
+var $ = require('jquery');
 /*
  * data => { extra:obj url:"url" , html:"html" , href:["href"]}
  * callback => function( err

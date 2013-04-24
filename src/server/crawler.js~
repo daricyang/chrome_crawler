@@ -66,22 +66,19 @@ Crawler.prototype.ack = function(tasks,callback){
 		async.every(task.results,function(data,done){
 			try{
 				data.extra = task.extra;
-				handler(data
-					,function(err,nexts){
-						if(err){done(true);}
-						else{
-							nexts.forEach(function(job){
-								if(job.urls.length!=0){
-	       								if(job.handler == '__self__') job.handler = task.handler;
-									_self.push(job)
-								}
-							});
-						}
+				handler(data,function(err,nexts){
+					if(err){done(true);}
+					else{
+						nexts.forEach(function(job){
+							if(job.urls.length!=0){
+       								if(job.handler == '__self__') job.handler = task.handler;
+								_self.push(job)
+							}
+						});
 					}
-					,function(){
-						done(true);
-					}
-				);
+				},function(){
+					done(true);
+				});
 			}catch(exe){logger.error(exe); done(true);}
 		},function(all){done(true);});
 	},function(all){callback();});

@@ -96,13 +96,18 @@ function Worker(config){
 			postAgent(_self.config.base_url+'pull',"",function(job,err){
 				if(err)	callback(err);				
 				//console.log(job);
-				if(job.length){
+				if(job&&job.length){
 					try{
 						job = JSON.parse(job);
-						console.log(Date(),_self.jobDone,'done,','job recieved',job.urls.length);
-						job.urls.forEach(function(url){
-							_self.queue.push({url:url,handler:job.handler,extra:job.extra});
-						});
+						if(job.urls){
+							console.log(Date(),_self.jobDone,'done,','job recieved',job.urls.length);
+							job.urls.forEach(function(url){
+								_self.queue.push({url:url,handler:job.handler,extra:job.extra});
+							});
+						}else{
+							console.log(Date(),"job exceptions",job);
+							callback();
+						}
 					}catch(exe){
 						console.log(Date(),'sth worng',exe);
 					}finally{
