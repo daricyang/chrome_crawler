@@ -86,7 +86,7 @@ var $ = require('jquery');
  * 				)
  * */
 /*---------------tencent method---------------*/
-var tencentPeople=function(data,callback){
+var tencentPeople=function(data,callback,finish){
 	var user=data.url.replace(/u=(.*?)&&/,'$1');
 	var nexts=[];
 	var extract_pages=function(done){
@@ -109,6 +109,7 @@ var tencentPeople=function(data,callback){
 			//console.log("\n\n\n"+nextObjs.length+"\n\n\n\n");
 			//get uid & push all pages urls
 			//console.log(nextObjs);
+/*
 			async.filter(nextObjs
 				,function(user,callback){
 					redisClient.sadd('tencent',user.name,function(err,res){
@@ -121,7 +122,18 @@ var tencentPeople=function(data,callback){
 					done();
 				}
 			);
-/*
+*/
+
+			function flush(compel){
+                        	if((compel&&nexts&&nexts.length>0)||(nexts&&nexts.length>=100)){
+                        		callback(null,[{
+       				                 handler : 'tencent_people'
+			                        ,urls    : nexts
+                      			  }]);
+                       			 nexts=[];
+                        	}
+                        }
+
 			async.filter(nextObjs,
 				function(user,callback){
 					//console.log(user.name);
@@ -135,16 +147,19 @@ var tencentPeople=function(data,callback){
 						nexts.push('http://1.t.qq.com/home_userinfo.php?u='+u[name]);
 						for(var j=1;j<=Math.ceil(parseInt(u.following)/15.0);j++){
 							nexts.push('http://1.t.qq.com/asyn/following.php?u='+u.name+'&&time=&page='+j+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
+							flush();
 						}
 						for(var j=1;j<=Math.ceil(parseInt(u.follower)/15.0);j++){
 							nexts.push('http://1.t.qq.com/asyn/follower.php?u='+u.name+'&&time=&page='+j+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
+							flush();
 						}
+						flush(1);
 					});
 					//console.log('len:\t'+nexts.length);
 					done();
 				}	
 			);
-*/
+
 		}else	done();
 
 	}
@@ -152,10 +167,7 @@ var tencentPeople=function(data,callback){
 		function(err,results){
 			console.log('len:\t'+nexts.length);
 			tencentSaverBatch.push({url:data.url,html:data.html,time:(new Date().getTime())});
-			callback(null,[{
-					 handler : 'tencent_people'
-					,urls 	 : nexts
-			}]);
+			finish();
 		}	
 	);
 	
@@ -165,10 +177,20 @@ var tencentPeople=function(data,callback){
 exports.tencentPeople=tencentPeople;
 /*--------------end tencent method------------*/
 
-exports.weiboPeople = function(data,callback){
+exports.weiboPeople = function(data,callback,finish){
 	logger.debug('handling',data.url);
 	var user = data.url.replace(/http.*\/\/[^\/]*\/([0-9]*)\/.*/,'$1');
 	var nexts = [];
+	function flush(compel){
+        	if((compel&&nexts&&nexts.length>0)||(nexts&&nexts.length>=100)){
+ 	               callback(null,[{
+  	        	             handler : 'tencent_people'
+        	                     ,urls    : nexts
+                       }]);
+                       nexts=[];
+           	 }
+	}
+
 	//extract all user id
 	var getUsers = function(done){
 		if(data.url.match(/follow$/) || data.url.match(/fans$/)){
@@ -213,6 +235,7 @@ exports.weiboPeople = function(data,callback){
 			var base = data.url + '?page=';
 			for(var i=2;i<=maxPage;++i){
 				nexts.push(base+i);
+				flush();
 			}
 			done();
 		}else{	done();	}
@@ -244,10 +267,8 @@ exports.weiboPeople = function(data,callback){
 			,getUsers :	getUsers	
 		},function(err,results){
 			pageSaverBatch.push({url:data.url,html:data.html,time:(new Date().getTime())});
-			callback(null,[{
-						 handler : '__self__'
-						,urls 	 : nexts
-						}]);
+			flush(1);
+			finish();
 		}
 	);
 }

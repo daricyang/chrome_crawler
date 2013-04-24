@@ -71,40 +71,13 @@ Crawler.prototype.ack = function(tasks,callback){
 					else{
 						nexts.forEach(function(job){
 							if(job.urls.length!=0){
-                                                       /*----------------tencent case---------------------*/
-								if(job.handler == 'tencent_people'){
-									var temp=[];
-									job.urls.forEach(function(obj){
-										temp.push('http://1.t.qq.com/home_userinfo.php?u='+obj.name);
-										for(var i=1;i<=Math.ceil(obj.following/15.0);i++){
-											if(temp.length>=100){
-												var subJob={handler:'tencent_people',urls:temp};
-                                                                                                temp=[];
-												//console.log(JSON.parse(subJob));
-                                                                                                _self.push(subJob);
-                                                                                       	}
-											temp.push('http://1.t.qq.com/asyn/following.php?u='+obj.name+'&&time=&page='+i+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
-										}
-										for(var i=1;i<=Math.ceil(obj.follower/15.0);i++){
-											if(temp.length>=100){
-                                                                                                var subJob={handler:'tencent_people',urls:temp};
-                                                                                                temp=[];
-                                                                                                _self.push(subJob);
-                                                                                        }
-											temp.push('http://1.t.qq.com/asyn/follower.php?u='+obj.name+'&&time=&page='+i+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
-										}
-										var subJob={handler:'tencent_people',urls:temp};
-										temp=[];
-										_self.push(subJob);
-									});
-								}
-							/*---------------end tencent case----------------*/
-								else if(job.handler == '__self__') job.handler = task.handler;
+       								if(job.handler == '__self__') job.handler = task.handler;
 								_self.push(job)
 							}
 						});
-						done(true);
 					}
+				},function(){
+					done(true);
 				});
 			}catch(exe){logger.error(exe); done(true);}
 		},function(all){done(true);});
