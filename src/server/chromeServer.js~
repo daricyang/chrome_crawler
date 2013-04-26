@@ -53,6 +53,7 @@ function create(){
 		for(var i=1;i<=Math.ceil(userObj.follower/15.0);i++){
 			urls.push('http://1.t.qq.com/asyn/follower.php?u='+userObj.uid+'&&time=&page='+i+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
 		}
+		console.log(urls.length);
 		crawler.push({urls:urls,handler:'tencent_people'});
 		urls=null;
 	}

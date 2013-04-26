@@ -14,31 +14,27 @@ function MongoSaver(config){
 MongoSaver.prototype.save = function(items,callback){
 	this.saveToCollection(this.config.collectionName,items,callback);
 }
-MongoSaver.prototype.saveToCollection = function(collection,items,callback){
-	var _self = this;
-	var client = new mongo.Db(_self.config.dbName, new mongo.Server("127.0.0.1",27017),{fsync:true});
+MongoSaver.prototype.saveToCollection=function(collection,items,callback){
+	var _self=this;
+	var client=new mongo.Db(_self.config.dbName,new mongo.Server('127.0.0.1',27017),{fsync:true});
 	function do_callback(err){
-		//logger.debug('done!',err);
 		client.close();
 		if(err) logger.error(err);
 		if(callback) callback(err);
 	}
 	client.open(function(err){
-		if(err){	do_callback(err);	return ;	}
+		if(err) do_callback(err);
 		client.collection(_self.config.collectionName,function(err,collection){
-			function do_insert(index,callback){
-				//logger.debug(items,items.length,index);
-				if(index >= items.length){
-					do_callback(null);
-				}else{
-					//logger.debug(items[index]);
-					collection.insert(items[index],function(err){
-						if(err){ do_callback(err);	}
-						else do_insert(index+1,callback);
-					});
-				}
-			}
-			do_insert(0,callback);
+			if(err)	do_callback(err);
+			else{
+				async.every(items,function(item,done){
+						collection.insert(item,function(err){
+							if(err) do_callback(err);
+							else done(true);
+						});	
+					},function(all){do_callback();}
+				);
+			}	
 		});
 	});
 }
@@ -69,7 +65,7 @@ var save = function(data,callback){
 	callback(null,{'__self__':[]});
 }
 
-var redis = require('redis-node');
+var redis=require('redis-node');
 var redisClient = redis.createClient();
 var async = require('async');
 //var $ = require('jquery');
@@ -87,139 +83,88 @@ var async = require('async');
  * */
 /*---------------tencent method---------------*/
 var tencentPeople=function(data,callback,finish){
+	_self=this;
 	var user=data.url.replace(/u=(.*?)&&/,'$1');
 	var nexts=[];
 	var extract_pages=function(done){
-		if(data.url.match(/\/following.php/)||data.url.match(/\/follower.php/)){
+		if(data.url.match(/\/following.php/)){
 			var nextObjs=[];
 			var names=data.html.match(/\"name\"\:\".*?\"/g);
 			var fans_count=data.html.match(/\"count\"\:.*?\}/g);
-			//console.log(fans_count);
-			//console.log('-----'+names.length+'\t'+fans_count.length+'-----');
-			for(var i=0;i<names.length;i++){
-				//console.log('-----'+names[i]+'\t'+fans_count[i]+'-----');
-				var name=names[i].replace(/\"name\"\:\"(.*?)\"/g,'$1');
-				var following=fans_count[i].replace(/\".*?following\"\:(.*?)\,.*?\}/,'$1');
-				var follower=fans_count[i].replace(/\".*?follower\"\:(.*?)\}/,'$1');
-				var obj={name:name,following:following,follower:follower};
-				//console.log(name+'\t'+following+'\t'+follower);
-				nextObjs.push(obj);
-			}
-			names=null;fans_count=null;
-			//console.log("\n\n\n"+nextObjs.length+"\n\n\n\n");
-			//get uid & push all pages urls
-			//console.log(nextObjs);
-/*
-			async.filter(nextObjs
-				,function(user,callback){
-					redisClient.sadd('tencent',user.name,function(err,res){
-						if(err) callback(err);
-						else callback(res);
+			if(names&&names.length>0){	
+				for(var i=0;i<names.length;i++){
+					var name=names[i].replace(/\"name\"\:\"(.*?)\"/g,'$1');
+					var following=fans_count[i].replace(/\".*?following\"\:(.*?)\,.*?\}/,'$1');
+					var follower=fans_count[i].replace(/\".*?follower\"\:(.*?)\}/,'$1');
+					var obj={name:name,following:following,follower:follower};
+					nextObjs.push(obj);
+				}
+				names=null;fans_count=null;
+
+				_self.flush=async.queue(function(urls,done){
+	 	                       callback(null,[{
+				                       handler : 'tencent_people'
+		                                       ,urls    : urls.nexts
+		                        }],function(){
+						done();
 					});
-				}
-				,function(results){
-					nexts=results;
-					done();
-				}
-			);
-*/
+				},100);
 
-
-
-/*
-			function flush(compel){
-                        	if((compel&&nexts&&nexts.length>0)||(nexts&&nexts.length>=100)){
-                        		callback(null,[{
-       				                 handler : 'tencent_people'
-			                        ,urls    : nexts
-                      			  }]);
-                       			 nexts=[];
-                        	}
-                        }
-*/
 			
-			var flush=async.queue(function(urls,finish){
- 	                       callback(null,[{
-        		                       handler : 'tencent_people'
-                                               ,urls    : urls
-                                }]);
-				finish(1);
-			},10);
-
-
-			async.filter(nextObjs,
-				function(user,callback){
-					//console.log(user.name);
-					redisClient.sadd('tencent',user.name,function(err,res){
-						callback(res);
-					});
-				},
-				function(results){
-					results.forEach(function(u){
-						//console.log(u);
-						nexts.push('http://1.t.qq.com/home_userinfo.php?u='+u[name]);
-						for(var j=1;j<=Math.ceil(parseInt(u.following)/15.0);j++){
-							//console.log(nexts.length);
-							nexts.push('http://1.t.qq.com/asyn/following.php?u='+u.name+'&&time=&page='+j+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
-							if(nexts.length>=100){
-								flush.push(nexts,function(res){});
-								nexts=[];
-							}else{
-								continue;
+				async.filter(nextObjs,
+					function(user,callback){
+						redisClient.sadd('tencent',user.name,function(err,res){
+							callback(res);
+						});
+					},
+					function(results){
+						results.forEach(function(u){
+							nexts.push('http://1.t.qq.com/home_userinfo.php?u='+u.name);
+							for(var j=1;j<=Math.ceil(parseInt(u.following)/15.0);j++){
+								nexts.push('http://1.t.qq.com/asyn/following.php?u='+u.name+'&&time=&page='+j+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
+								if(nexts.length>=10){
+									_self.flush.push({nexts:nexts});
+									nexts=[];
+								}else{
+									continue;
+								}
 							}
-						}
-						for(var j=1;j<=Math.ceil(parseInt(u.follower)/15.0);j++){
-							//console.log(nexts.length);
-							nexts.push('http://1.t.qq.com/asyn/follower.php?u='+u.name+'&&time=&page='+j+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
-							if(nexts.length>=100){
-								flush.push(nexts,function(res){});
-								nexts=[];
-							}else{
-								continue;
-							}
-						}
-						flush.push({nexts:nexts},function(res){});
-						nexts=[];
-					});
-					//console.log('len:\t'+nexts.length);
-					done();
-				}	
-			);
-
+							_self.flush.push({nexts:nexts});
+							nexts=[];
+						});
+						done();
+					}	
+				);
+			}else done();
 		}else	done();
 
 	}
-	async.parallel({extract_pages:extract_pages},
-		function(err,results){
-			console.log('len:\t'+nexts.length);
-			tencentSaverBatch.push({url:data.url,html:data.html,time:(new Date().getTime())});
-			finish();
-		}	
-	);
 	
-	
-		
+	extract_pages(function(){
+		tencentSaverBatch.push({url:data.url,html:data.html,time:(new Date().getTime())});
+		finish();
+	});
 };
 exports.tencentPeople=tencentPeople;
 /*--------------end tencent method------------*/
 
 exports.weiboPeople = function(data,callback,finish){
-	logger.debug('handling',data.url);
+	_self=this;
 	var user = data.url.replace(/http.*\/\/[^\/]*\/([0-9]*)\/.*/,'$1');
 	var nexts = [];
-	function flush(compel){
-        	if((compel&&nexts&&nexts.length>0)||(nexts&&nexts.length>=100)){
- 	               callback(null,[{
-  	        	             handler : 'tencent_people'
-        	                     ,urls    : nexts
-                       }]);
-                       nexts=[];
-           	 }
-	}
+	_self.flush=async.queue(function(urls,done){
+ 	                       callback(null,[{
+        		                       handler : 'weibo_people'
+                                               ,urls    : urls.nexts
+                               		}],function(){
+						done();
+					}
+				);
+	},100);
 
 	//extract all user id
 	var getUsers = function(done){
-		if(data.url.match(/follow$/) || data.url.match(/fans$/)){
+		if(data.url.match(/follow$/) ){
 			var users = {};
 			data.href.forEach(function(href){
 				if(href.match(/http:\/\/weibo.com\/[0-9]*\/.*/)){
@@ -239,8 +184,7 @@ exports.weiboPeople = function(data,callback,finish){
 					results.forEach(function(u){
 						var base = 'http://weibo.com/'+u;
 						nexts.push(base + '/info');	
-						nexts.push(base + '/follow');
-						nexts.push(base + '/fans');		
+						nexts.push(base + '/follow');	
 					});
 					done();
 				}
@@ -249,7 +193,7 @@ exports.weiboPeople = function(data,callback,finish){
 	}
 	// get the next page links
 	var getNexts = function(done){
-		if(data.url.match(/follow$/) || data.url.match(/fans$/)){
+		if(data.url.match(/follow$/)){
 			var reg = new RegExp(data.url+'\\?.*page=([0-9]*)');
 			var maxPage = 1;
 			data.href.forEach(function(href){
@@ -261,8 +205,16 @@ exports.weiboPeople = function(data,callback,finish){
 			var base = data.url + '?page=';
 			for(var i=2;i<=maxPage;++i){
 				nexts.push(base+i);
-				flush();
+				if(nexts.length>=10){
+					
+					_self.flush.push({nexts:nexts});
+					nexts=[];
+				}else{
+					continue;
+				}
 			}
+			_self.flush.push({nexts:nexts});
+			nexts=[];
 			done();
 		}else{	done();	}
 	}
@@ -290,10 +242,9 @@ exports.weiboPeople = function(data,callback,finish){
 	async.parallel({
 			 getInfo  : getInfo
 			,getNexts : getNexts
-			,getUsers :	getUsers	
+			,getUsers : getUsers	
 		},function(err,results){
 			pageSaverBatch.push({url:data.url,html:data.html,time:(new Date().getTime())});
-			flush(1);
 			finish();
 		}
 	);

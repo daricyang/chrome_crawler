@@ -67,16 +67,14 @@ Crawler.prototype.ack = function(tasks,callback){
 			try{
 				data.extra = task.extra;
 				handler(data
-					,function(err,nexts){
-						if(err){done(true);}
-						else{
-							nexts.forEach(function(job){
-								if(job.urls.length!=0){
-	       								if(job.handler == '__self__') job.handler = task.handler;
-									_self.push(job)
-								}
-							});
-						}
+					,function(err,nexts,done){
+						nexts.forEach(function(job){
+							if(job.urls.length!=0){
+       								if(job.handler == '__self__') job.handler = task.handler;
+								_self.push(job)
+							}
+						});
+						done();
 					}
 					,function(){
 						done(true);

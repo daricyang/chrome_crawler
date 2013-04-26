@@ -16,6 +16,7 @@
 				var url = base_url+'get_cookie/sina';
 				http_agent(url,{},function(err,data){
 					try{
+						console.log(err);
 						login.date=new Date().getHours();
 						login.logincookie=JSON.parse(data).cookie;
 						callback(null,login);
@@ -135,6 +136,6 @@
 		}
 	
 	
-	//test();
+	test();
 })(typeof exports === 'undefined'? this['./fetcher']={}: exports);
 

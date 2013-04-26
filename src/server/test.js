@@ -126,7 +126,53 @@ function test_cookie(){
 		else console.log(date);	
 	});
 }
-test_cookie();
+
+function test_re(){
+	var client=require("redis-node").createClient();
+	client.sadd('tencent','daricyang',function(err,res){
+		console.log(res);
+	});
+	
+}
+
+
+function test_async(){
+	_self=this;
+	var async=require("async");
+	_self.flush=async.queue(function(data,done){
+		console.log(data.i);
+		done();
+	});
+
+	var a={i:[1,2,3]};
+	var b={i:[4,5,6]};
+	_self.flush.push(a);
+	_self.flush.push(b);
+}
+
+
+function test_ran(){
+	var mongo=require('mongodb');
+	var client=new mongo.Db('people',new mongo.Server('192.168.86.216',27017),{fsync:true});
+	client.open(function(err){
+		if(err) console.log(err);
+		else client.collection('c_login_cookie',function(err,coll){
+			if(err)	console.log(err);
+			else	coll.find({'status':'available'}).toArray(function(err,data){
+					console.log(data[Math.ceil(Math.random()*data.length)-1]);
+				});
+		});
+	});
+}
+test_ran();
+
+//test_async();
+
+
+//test_re();
+
+
+//test_cookie();
 //test_ser();
 //test_worker1();
 

@@ -9,7 +9,7 @@ function Cookie(config){
 		coll4weibo:'c_login_cookie',
 	},config);
 
-	_self.getCookie=function(arg,callback){
+	_self.getCookie=function(callback){
 		var client=new mongo.Db(_self.config.dbName,new mongo.Server(_self.config.ip,27017),{fsync:true});
 		function do_callback(err,data){
 			client.close();
@@ -28,7 +28,7 @@ function Cookie(config){
 		});
 	};
 
-	_self.get_qq_cookie=function(arg,callback){
+	_self.get_qq_cookie=function(callback){
 		var client=new mongo.Db(_self.config.dbName,new mongo.Server(_self.config.ip,27017),{fsync:true});
 		function do_callback(err,data){
 			client.close();
