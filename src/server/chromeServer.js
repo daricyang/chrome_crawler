@@ -13,7 +13,8 @@ function reset(){
 function create(){
 	var server = new Server({port:8890});
 	var crawler = new Crawler({name:'Crawler'});
-	var cookie=new Cookie({ip:'192.168.86.216'});
+	//var cookie=new Cookie({ip:'192.168.86.216'});
+	var cookie=new Cookie();	
 	server.expose('/pull',crawler.pull.bind(crawler));
 	server.expose('/ack',crawler.ack.bind(crawler));
 	server.expose('/push_url',function(arg,callback){
@@ -39,8 +40,8 @@ function create(){
 				,handler : "weibo_people"
 		});
 	}
-	pushUser('1910034497');
-	pushUser('1752762577');
+	pushUser('1773283005');
+	pushUser('2080182621');
 	
 	/*----------tencent method------------------*/
 	//userObj={uid:String,following:number,follower:number};
@@ -56,7 +57,7 @@ function create(){
 		crawler.push({urls:urls,handler:'tencent_people'});
 		urls=null;
 	}
-	push_qq_user({uid:'daricyang',following:134,follower:39});
+	 push_qq_user({uid:'daricyang',following:134,follower:39});
 	/*-----------end tencent method---------------*/
 }
 

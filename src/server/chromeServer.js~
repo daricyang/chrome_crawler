@@ -13,7 +13,8 @@ function reset(){
 function create(){
 	var server = new Server({port:8890});
 	var crawler = new Crawler({name:'Crawler'});
-	var cookie=new Cookie({ip:'192.168.86.216'});
+	//var cookie=new Cookie({ip:'192.168.86.216'});
+	var cookie=new Cookie();	
 	server.expose('/pull',crawler.pull.bind(crawler));
 	server.expose('/ack',crawler.ack.bind(crawler));
 	server.expose('/push_url',function(arg,callback){
@@ -39,8 +40,8 @@ function create(){
 				,handler : "weibo_people"
 		});
 	}
-	pushUser('1910034497');
-	pushUser('1752762577');
+	pushUser('1773283005');
+	pushUser('2080182621');
 	
 	/*----------tencent method------------------*/
 	//userObj={uid:String,following:number,follower:number};
@@ -53,7 +54,6 @@ function create(){
 		for(var i=1;i<=Math.ceil(userObj.follower/15.0);i++){
 			urls.push('http://1.t.qq.com/asyn/follower.php?u='+userObj.uid+'&&time=&page='+i+'&id=&apiType=4&apiHost=http%3A%2F%2Fapi.t.qq.com&_r=1365666653702');
 		}
-		console.log(urls.length);
 		crawler.push({urls:urls,handler:'tencent_people'});
 		urls=null;
 	}

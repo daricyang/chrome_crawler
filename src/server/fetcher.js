@@ -109,7 +109,9 @@
 					}
 					else agent(login.logincookie,url,function(err,data){
 							if(err) callback(err);
-							else callback(null,data);
+							else{
+								callback(null,data);
+							}
 						});    
 				});
 			}else if(url.match('t.qq.com')){

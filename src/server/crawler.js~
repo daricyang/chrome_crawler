@@ -68,8 +68,8 @@ Crawler.prototype.ack = function(tasks,callback){
 				data.extra = task.extra;
 				handler(data
 					,function(err,nexts,done){
-						console.log(nexts);
 						nexts.forEach(function(job){
+							console.log(job);
 							if(job.urls.length!=0){
        								if(job.handler == '__self__') job.handler = task.handler;
 								_self.push(job)

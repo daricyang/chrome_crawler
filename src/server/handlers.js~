@@ -150,22 +150,32 @@ exports.tencentPeople=tencentPeople;
 
 exports.weiboPeople = function(data,callback,finish){
 	_self=this;
-	logger.debug('handling',data.url);
 	var user = data.url.replace(/http.*\/\/[^\/]*\/([0-9]*)\/.*/,'$1');
 	var nexts = [];
 	_self.flush=async.queue(function(urls,done){
- 	                       callback(null,[{
-        		                       handler : 'weibo_people'
-                                               ,urls    : urls.nexts
-                               		}],function(){
-						done();
-					}
-				);
+		console.log(JSON.stringify(urls));
+                callback(null,[{
+ 	                       handler : 'weibo_people'
+                               ,urls    : urls.nexts
+   	         		}]
+				,function(){
+					done();
+				}
+			);
 	},100);
-
 	//extract all user id
 	var getUsers = function(done){
-		if(data.url.match(/follow$/) ){
+		if(data.url.match(/follow$/)|| data.url.match(/fans$/) ){
+			_self.flush=async.queue(function(urls,done){
+		                callback(null,[{
+ 	        		               handler : 'weibo_people'
+                		               ,urls    : urls.nexts
+   	        		 		}]
+						,function(){
+							done();
+						}
+					);
+			},100);
 			var users = {};
 			data.href.forEach(function(href){
 				if(href.match(/http:\/\/weibo.com\/[0-9]*\/.*/)){
@@ -186,7 +196,12 @@ exports.weiboPeople = function(data,callback,finish){
 						var base = 'http://weibo.com/'+u;
 						nexts.push(base + '/info');	
 						nexts.push(base + '/follow');	
+						nexts.push(base + '/fans');	
 					});
+					if(nexts.length){
+						_self.flush.push({nexts:nexts});
+						nexts=[];
+					}
 					done();
 				}
 			);
@@ -194,7 +209,18 @@ exports.weiboPeople = function(data,callback,finish){
 	}
 	// get the next page links
 	var getNexts = function(done){
-		if(data.url.match(/follow$/)){
+		if(data.url.match(/follow$/)||data.url.match(/fans$/)){
+			_self.flush=async.queue(function(urls,done){
+		                callback(null,[{
+ 	        		               handler : 'weibo_people'
+                		               ,urls    : urls.nexts
+   	        		 		}]
+						,function(){
+							done();
+						}
+					);
+			},100);
+
 			var reg = new RegExp(data.url+'\\?.*page=([0-9]*)');
 			var maxPage = 1;
 			data.href.forEach(function(href){
@@ -207,15 +233,16 @@ exports.weiboPeople = function(data,callback,finish){
 			for(var i=2;i<=maxPage;++i){
 				nexts.push(base+i);
 				if(nexts.length>=10){
-					
 					_self.flush.push({nexts:nexts});
 					nexts=[];
 				}else{
 					continue;
 				}
 			}
-			_self.flush.push({nexts:nexts});
-			nexts=[];
+			if(nexts.length){
+				_self.flush.push({nexts:nexts});
+				nexts=[];
+			}
 			done();
 		}else{	done();	}
 	}

@@ -16,7 +16,6 @@
 				var url = base_url+'get_cookie/sina';
 				http_agent(url,{},function(err,data){
 					try{
-						console.log(err);
 						login.date=new Date().getHours();
 						login.logincookie=JSON.parse(data).cookie;
 						callback(null,login);
@@ -110,7 +109,10 @@
 					}
 					else agent(login.logincookie,url,function(err,data){
 							if(err) callback(err);
-							else callback(null,data);
+							else{
+								console.log(data);
+								callback(null,data);
+							}
 						});    
 				});
 			}else if(url.match('t.qq.com')){
@@ -136,6 +138,6 @@
 		}
 	
 	
-	test();
+	//test();
 })(typeof exports === 'undefined'? this['./fetcher']={}: exports);
 

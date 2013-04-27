@@ -19,10 +19,12 @@ function Cookie(config){
 		client.open(function(err){
 			if(err) do_callback(err);
 			else	client.collection(_self.config.coll4weibo,function(err,coll){
-				if(err) callback(err);
-				else	coll.find({'status':'available'}).toArray(function(err,data){
-						if(err)	do_callback(err);				
-						else	do_callback(null,data[parseInt(Math.random()*data.length)]);
+					if(err) callback(err);
+					else	coll.find({'status':'available'}).toArray(function(err,data){
+							if(err)	do_callback(err);				
+							else{
+								do_callback(null,data[parseInt(Math.random()*data.length)]);
+							}
 					});
 			});
 		});
@@ -54,8 +56,8 @@ exports.Cookie=Cookie;
 
 
 function test(){
-	var cookie=new Cookie({ip:'192.168.86.216'});
-	cookie.getCookie(function(err,data){
+	var cookie=new Cookie();
+	cookie.get_qq_cookie("",function(err,data){
 		if(err) console.log(err);
 		else console.log(data);
 	});

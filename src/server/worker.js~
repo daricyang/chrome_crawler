@@ -77,8 +77,8 @@ function Worker(config){
 			if(!err){
 				var href = extract_all(url,html);
 				_self.cargo.push({handler:job.handler, extra:job.extra, data:{url:url, html:html,href:href}});
-			}
-			done();
+				done();
+			}else done();
 		});
 	},_self.config.parallel);
 	_self.jobDone = -1;
@@ -99,6 +99,7 @@ function Worker(config){
 							});
 						}else{
 							console.log(Date(),"job exceptions",job);
+							callback();
 						}
 					}catch(exe){
 						console.log(Date(),'sth worng',exe);

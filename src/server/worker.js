@@ -77,8 +77,8 @@ function Worker(config){
 			if(!err){
 				var href = extract_all(url,html);
 				_self.cargo.push({handler:job.handler, extra:job.extra, data:{url:url, html:html,href:href}});
-			}
-			done();
+				done();
+			}else done();
 		});
 	},_self.config.parallel);
 	_self.jobDone = -1;
@@ -115,7 +115,7 @@ function Worker(config){
 			callback();
 		}
 	}
-	function loop(sec){
+	function loop(err,sec){
 		sec = sec || 10;
 		setTimeout(function(){
 			if(_self.on){
